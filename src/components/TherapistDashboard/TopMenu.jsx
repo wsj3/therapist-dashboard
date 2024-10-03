@@ -1,24 +1,44 @@
 import React from 'react';
 import { UserPlus, LogIn, HelpCircle, PlayCircle, Info } from 'lucide-react';
 
-const TopMenu = () => {
+const TopMenu = ({ setActiveTopMenu }) => {
   return (
     <nav className="flex items-center space-x-4">
-      <a href="/signup" className="text-blue-100 hover:text-white" title="Sign Up">
+      <button 
+        onClick={() => setActiveTopMenu('signup')} 
+        className="text-blue-100 hover:text-white" 
+        title="Sign Up"
+      >
         <UserPlus size={24} />
-      </a>
-      <a href="/login" className="text-blue-100 hover:text-white" title="Login">
+      </button>
+      <button 
+        onClick={() => setActiveTopMenu('login')} 
+        className="text-blue-100 hover:text-white" 
+        title="Login"
+      >
         <LogIn size={24} />
-      </a>
-      <a href="/help" className="text-blue-100 hover:text-white" title="Help">
+      </button>
+      <button 
+        onClick={() => setActiveTopMenu('help')} 
+        className="text-blue-100 hover:text-white" 
+        title="Help"
+      >
         <HelpCircle size={24} />
-      </a>
-      <a href="/getting-started" className="text-blue-100 hover:text-white" title="Getting Started">
+      </button>
+      <button 
+        onClick={() => setActiveTopMenu('gettingstarted')} 
+        className="text-blue-100 hover:text-white" 
+        title="Getting Started"
+      >
         <PlayCircle size={24} />
-      </a>
-      <a href="/about-us" className="text-blue-100 hover:text-white" title="About Us">
+      </button>
+      <button 
+        onClick={() => setActiveTopMenu('aboutus')} 
+        className="text-blue-100 hover:text-white" 
+        title="About Us"
+      >
         <Info size={24} />
-      </a>
+      </button>
     </nav>
   );
 };

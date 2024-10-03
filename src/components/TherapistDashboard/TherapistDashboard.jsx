@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Calendar as CalendarIcon, Video, BarChart, DollarSign, Users, Mail, FileText, Mic, Stethoscope, Settings as SettingsIcon } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar as CalendarIcon, Video, BarChart, DollarSign, Users, Mail, FileText, Stethoscope, Settings as SettingsIcon } from 'lucide-react';
 import TopMenu from './TopMenu';
 
 // Import module components
@@ -13,87 +13,60 @@ import VideoChat from './VideoChat';
 import DiagnosisTreatment from './DiagnosisTreatment';
 import Settings from './Settings';
 
-const API_BASE_URL = 'http://127.0.0.1:8000';
+// Import top menu modules
+import SignUpModule from './SignUpModule';
+import LoginModule from './LoginModule';
+import HelpModule from './HelpModule';
+import GettingStartedModule from './GettingStartedModule';
+import AboutUsModule from './AboutUsModule';
 
 const TherapistDashboard = () => {
-  const [activeModule, setActiveModule] = useState('calendar');
+  const [activeModule, setActiveModule] = useState('home');
+  const [activeTopMenu, setActiveTopMenu] = useState(null);
   const [isAIEnabled, setIsAIEnabled] = useState(false);
   const [assistantResponse, setAssistantResponse] = useState('');
-  const [isToggling, setIsToggling] = useState(false);
-  const [isListening, setIsListening] = useState(false);
-  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [textInput, setTextInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const toggleAI = async () => {
-    if (isToggling) return;
-    setIsToggling(true);
+  const toggleAI = () => {
+    setIsAIEnabled(!isAIEnabled);
+    if (!isAIEnabled) {
+      setAssistantResponse('AI Assistant enabled. How can I help you?');
+    } else {
+      setAssistantResponse('');
+    }
+  };
+
+  const handleTextInputChange = (e) => {
+    setTextInput(e.target.value);
+  };
+
+  const handleTextInputSubmit = async (e) => {
+    e.preventDefault();
+    if (!textInput.trim()) return;
+
+    setIsLoading(true);
     try {
-      const endpoint = isAIEnabled ? '/stop_speech_interaction' : '/start_speech_interaction';
-      console.log(`Sending request to: ${API_BASE_URL}${endpoint}`);
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, { method: 'POST' });
-      console.log('Response status:', response.status);
-      const responseData = await response.json();
-      console.log('Response data:', responseData);
-      
-      if (response.ok) {
-        setIsAIEnabled(!isAIEnabled);
-        if (!isAIEnabled) {
-          setAssistantResponse('AI Assistant enabled. How can I help you?');
-        } else {
-          setAssistantResponse('');
-        }
-      } else {
-        console.error('Failed to toggle assistant:', responseData);
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: textInput }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get response from server');
       }
+
+      const data = await response.json();
+      setAssistantResponse(data.response);
     } catch (error) {
-      console.error('Error toggling assistant:', error);
+      console.error('Error querying AI:', error);
+      setAssistantResponse('Sorry, I encountered an error while processing your request.');
     } finally {
-      setIsToggling(false);
-    }
-  };
-
-  const startSpeechInteraction = async () => {
-    if (isAIEnabled && !isSpeaking) {
-      setIsSpeaking(true);
-      try {
-        const response = await fetch(`${API_BASE_URL}/start_speech_interaction`, { method: 'POST' });
-        if (response.ok) {
-          pollSpeechResponse();
-        } else {
-          console.error('Failed to start speech interaction');
-        }
-      } catch (error) {
-        console.error('Error starting speech interaction:', error);
-      }
-    }
-  };
-
-  const stopSpeechInteraction = async () => {
-    try {
-      await fetch(`${API_BASE_URL}/stop_speech_interaction`, { method: 'POST' });
-      setIsSpeaking(false);
-    } catch (error) {
-      console.error('Error stopping speech interaction:', error);
-    }
-  };
-
-  const pollSpeechResponse = async () => {
-    while (isSpeaking) {
-      try {
-        const response = await fetch(`${API_BASE_URL}/get_speech_response`);
-        const data = await response.json();
-        if (data.response) {
-          setAssistantResponse(prevResponse => prevResponse + '\n' + data.response);
-        }
-        if (data.finished) {
-          setIsSpeaking(false);
-          break;
-        }
-        await new Promise(resolve => setTimeout(resolve, 1000)); // Poll every second
-      } catch (error) {
-        console.error('Error polling speech response:', error);
-        setIsSpeaking(false);
-        break;
-      }
+      setIsLoading(false);
+      setTextInput('');
     }
   };
 
@@ -118,116 +91,121 @@ const TherapistDashboard = () => {
       case 'settings':
         return <Settings />;
       default:
-        return <div>Select a module from the sidebar</div>;
+        return <div>Welcome to the Therapist Dashboard</div>;
+    }
+  };
+
+  const renderTopMenuContent = () => {
+    switch (activeTopMenu) {
+      case 'signup':
+        return <SignUpModule />;
+      case 'login':
+        return <LoginModule />;
+      case 'help':
+        return <HelpModule />;
+      case 'gettingstarted':
+        return <GettingStartedModule />;
+      case 'aboutus':
+        return <AboutUsModule />;
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className="bg-blue-600 text-white p-2 flex items-center justify-between">
-        <div className="flex items-center">
-          <img src="https://i.imgur.com/u7DNbbP.jpeg" alt="Vistral Logo" className="w-8 h-8 mr-2" />
+    <div className="flex flex-col min-h-screen bg-gray-900 text-white">
+      <header className="bg-gray-800 p-4 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <img src="https://i.imgur.com/u7DNbbP.jpeg" alt="Vistral Logo" className="w-10 h-10 rounded-full" />
           <div>
-            <h1 className="text-xl font-bold leading-tight">Vistral</h1>
-            <p className="text-xs">AI in support of therapists</p>
+            <h1 className="text-2xl font-bold">Vistral</h1>
+            <p className="text-sm text-gray-400">AI in support of therapists</p>
           </div>
         </div>
-        <TopMenu />
-      </div>
-      <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <div className="w-48 bg-blue-700 shadow-md flex flex-col">
-          <ul className="flex-grow pt-2">
-            {[
-              { name: 'Calendar', icon: CalendarIcon, key: 'calendar' },
-              { name: 'Customer Manager', icon: Users, key: 'crm' },
-              { name: 'Email', icon: Mail, key: 'email' },
-              { name: 'Insurance Billing', icon: DollarSign, key: 'billing' },
-              { name: 'Notes & Transcription', icon: FileText, key: 'notes' },
-              { name: 'Sentiment Analysis', icon: BarChart, key: 'sentiment' },
-              { name: 'Video Chat', icon: Video, key: 'video' },
-              { name: 'Diagnosis & Treatment', icon: Stethoscope, key: 'diagnosis' },
-              { name: 'Settings', icon: SettingsIcon, key: 'settings' },
-            ].map(({ name, icon: Icon, key }) => (
-              <li
-                key={key}
-                className={`p-2 hover:bg-blue-600 cursor-pointer ${
-                  activeModule === key ? 'bg-blue-800 text-white' : 'text-blue-100'
-                }`}
-                onClick={() => setActiveModule(key)}
-              >
-                <Icon className="inline-block mr-2" size={16} /> {name}
-              </li>
-            ))}
-          </ul>
-          <div className="p-4 border-t border-blue-600">
-            <div className="flex items-center justify-between text-blue-100">
-              <span className="mr-2 font-semibold">AI Assistant</span>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="sr-only peer"
-                  checked={isAIEnabled}
-                  onChange={toggleAI}
-                  disabled={isToggling}
-                />
-                <div className={`w-11 h-6 bg-blue-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-blue-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-400 ${isToggling ? 'opacity-50 cursor-not-allowed' : ''}`}></div>
-              </label>
-            </div>
-            {isAIEnabled && (
-              <div className="mt-2 text-center text-blue-200">
-                <div className="animate-pulse flex items-center justify-center">
-                  <Mic size={20} className="mr-2" />
-                  <span>AI Assistant Active</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        <TopMenu setActiveTopMenu={setActiveTopMenu} />
+      </header>
 
-        {/* Main content area */}
-        <div className="flex-1 p-4 overflow-auto bg-gray-100">
-          <h2 className="text-xl font-bold mb-4 text-blue-600">Therapist Dashboard</h2>
-          
-          {/* Render active module content */}
-          {renderModuleContent()}
-
-          {/* Speech interaction buttons */}
-          <div className="mt-4">
-            {isAIEnabled ? (
-              <>
-                <button
-                  onClick={startSpeechInteraction}
-                  disabled={isSpeaking}
-                  className={`px-4 py-2 rounded ${
-                    isSpeaking ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 hover:bg-blue-600'
-                  } text-white font-bold mr-2`}
-                >
-                  {isSpeaking ? 'Listening...' : 'Start Speaking'}
-                </button>
-                {isSpeaking && (
+      <main className="flex-grow flex">
+        <aside className="w-64 bg-gray-800 p-4">
+          <nav>
+            <ul className="space-y-2">
+              {[
+                { name: 'Calendar', icon: CalendarIcon, key: 'calendar' },
+                { name: 'Customers', icon: Users, key: 'crm' },
+                { name: 'Email', icon: Mail, key: 'email' },
+                { name: 'Billing', icon: DollarSign, key: 'billing' },
+                { name: 'Notes', icon: FileText, key: 'notes' },
+                { name: 'Analysis', icon: BarChart, key: 'sentiment' },
+                { name: 'Video Chat', icon: Video, key: 'video' },
+                { name: 'Diagnosis', icon: Stethoscope, key: 'diagnosis' },
+                { name: 'Settings', icon: SettingsIcon, key: 'settings' },
+              ].map(({ name, icon: Icon, key }) => (
+                <li key={key}>
                   <button
-                    onClick={stopSpeechInteraction}
-                    className="px-4 py-2 rounded bg-red-500 hover:bg-red-600 text-white font-bold"
+                    onClick={() => {setActiveModule(key); setActiveTopMenu(null);}}
+                    className={`w-full flex items-center space-x-2 p-2 rounded ${
+                      activeModule === key ? 'bg-green-500' : 'hover:bg-gray-700'
+                    }`}
                   >
-                    Stop Speaking
+                    <Icon size={20} />
+                    <span>{name}</span>
                   </button>
-                )}
-              </>
-            ) : (
-              <p className="text-gray-600 italic">Enable AI Assistant to use speech interaction</p>
-            )}
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </aside>
+
+        <section className="flex-grow p-8">
+          <h2 className="text-3xl font-bold mb-6">Therapist Dashboard</h2>
+          <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+            {activeTopMenu ? renderTopMenuContent() : renderModuleContent()}
           </div>
 
-          {/* AI Assistant response */}
           {assistantResponse && (
-            <div className="mt-4 p-4 bg-white border-l-4 border-green-500 rounded-r-lg shadow-md">
-              <p className="font-semibold text-green-600">AI Assistant:</p>
-              <p className="whitespace-pre-line">{assistantResponse}</p>
+            <div className="mt-6 p-4 bg-gray-800 border-l-4 border-green-500 rounded-lg">
+              <p className="font-semibold text-green-400">AI Assistant:</p>
+              <p className="mt-2">{assistantResponse}</p>
             </div>
           )}
+        </section>
+      </main>
+
+      <footer className="bg-gray-800 p-4">
+        <div className="flex items-center justify-between text-sm text-gray-400 mb-2">
+          <span>AI Assistant</span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={isAIEnabled}
+              onChange={toggleAI}
+            />
+            <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+          </label>
         </div>
-      </div>
+        {isAIEnabled && (
+          <form onSubmit={handleTextInputSubmit} className="flex">
+            <input
+              type="text"
+              value={textInput}
+              onChange={handleTextInputChange}
+              placeholder="Ask AI Assistant..."
+              className="flex-grow px-4 py-2 bg-gray-700 text-white rounded-l-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              className={`px-6 py-2 bg-green-500 text-white rounded-r-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                isLoading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              disabled={isLoading}
+            >
+              {isLoading ? 'Sending...' : 'Send'}
+            </button>
+          </form>
+        )}
+      </footer>
     </div>
   );
 };
