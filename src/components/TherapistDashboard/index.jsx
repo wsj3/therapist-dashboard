@@ -8,7 +8,12 @@ const TherapistDashboard = () => {
   }, []);
 
   console.log('Rendering TherapistDashboard');
-  return <div>Therapist Dashboard Content</div>;
+  return (
+    <div className="bg-blue-100 p-6 rounded-lg shadow-md max-w-2xl mx-auto mt-10">
+     
+     
+    </div>
+  );
 };
 
 export default TherapistDashboard;
